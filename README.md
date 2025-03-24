@@ -28,4 +28,13 @@ Built by Peter Mojica, Co-Founder of Integrity6, as a courtesy to charter school
 Questioning the process? The logic’s all here—weighted randomization with Fisher-Yates, sibling handling, and more. Check it out.
 
 ## Performance Notes
-We tested this script with a dataset of 6,330 rows (demand: 20,902 seats), averaging 10.84 miles from school, an average of 3.3 seats requested per application, and 240 sibling-preference cases. Setup: 60 seats awarded, partial awards allowed ("No" setting), and sibling preference at 2 (siblings pulled together, no priority). Weights by distance: 1-5 miles (1), 5.1-10 (2), 10.1-20 (3), 20
+We tested this script with a dataset of 6,330 rows (demand: 20,902 seats), averaging 10.84 miles from school, an average of 3.3 seats requested per application, and 240 sibling-preference cases. Setup: 60 seats awarded, partial awards allowed ("No" setting), and sibling preference at 2 (siblings pulled together, no priority). Weights by distance: 1-5 miles (1), 5.1-10 (2), 10.1-20 (3), 20.1-30 (4), 30.1-35 (5), 35.1-40 (6), 40.1-45 (25), 45.1-1000 (45). Ran on a modest Windows laptop, it processed without issues—no timeouts. Google Apps Script caps total execution at 6 minutes, and this test set should exceed most charter school needs. If you’re pushing larger datasets and hitting timeouts, optimizations are possible:
+- Quick fix: Remove progress updates in cells F2/F3 of the Lottery Results sheet to cut sheet writes (saves ~5-15 seconds on 6,000+ rows).
+- Advanced: Streamline weighted selection—e.g., use reservoir sampling to pick winners in one pass instead of shuffling and iterating—which could trim seconds off large runs, though the current method is efficient for typical sizes.
+If you’re at that point, this script might not be your best bet—consider a beefier system. Need help? We’re open to paid engagements at [info@integrity6.com](mailto:info@integrity6.com).
+
+## Why Open Source?
+At Integrity6, we believe in great customer service and supporting charter schools with practical tools. After building this for our customer, we saw its potential to help others facing the same chaos of paper-based lotteries. Open-sourcing it—built on Google Sheets and a transparent algorithm like Fisher-Yates—ensures fairness can be verified by all. It’s our way of giving back: a free, accessible solution aligned with our mission to help charter schools succeed.
+
+## Contact
+Reach out via [peter@integrity6.com](mailto:peter@integrity6.com) if you’re a charter school with questions. Otherwise, dive into the code!
