@@ -27,7 +27,7 @@ Licensed under Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 (CC 
 - No commercial use or modifications allowed.
 
 ## Credits
-Built by Peter Mojica, Co-Founder of Integrity6, as a courtesy to charter schools. No support or maintenance provided—use at your own discretion.
+Built by Integrity6, as a courtesy to charter schools. No support or maintenance provided—use at your own discretion.
 
 ## For Challengers
 Questioning the process? The logic’s all here—weighted randomization with Fisher-Yates, sibling handling, and more. Check it out.
