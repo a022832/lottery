@@ -34,7 +34,7 @@ We tested this script with a dataset of 6,330 rows (demand: 20,902 seats), avera
 If you’re at that point, this script might not be your best bet—consider a beefier system. Need help? We’re open to paid engagements at [info@integrity6.com](mailto:info@integrity6.com).
 
 ## Why Open Source?
-At Integrity6, we believe in great customer service and supporting charter schools with practical tools. After building this for our customer, we saw its potential to help others facing the same chaos of paper-based lotteries. Open-sourcing it—built on Google Sheets and a transparent algorithm like Fisher-Yates—ensures fairness can be verified by all. It’s our way of giving back: a free, accessible solution aligned with our mission to help charter schools succeed.
+At Integrity6, we believe in great customer service and supporting charter schools with practical tools. After building this for our customer, we saw its potential to help others facing the same chaos of paper-based bus lotteries. Open-sourcing it—built on Google Sheets and a transparent algorithm like Fisher-Yates—ensures fairness can be verified by all. It’s our way of giving back: a free, accessible solution aligned with our mission to help charter schools succeed.
 
 ## Contact
 Reach out via [peter@integrity6.com](mailto:peter@integrity6.com) if you’re a charter school with questions. Otherwise, dive into the code!
