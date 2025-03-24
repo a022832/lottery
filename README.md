@@ -6,10 +6,15 @@ This project began when a customer—a charter school—asked for help with thei
 
 ## How It Works
 - Pulls applicant data from a Google Sheet.
-- Assigns weights by distance (via a weight table).
+- Assigns weights by distance (via a weight table):
+  - Weights are designed so the farther away you live, the greater your chance of getting a seat.
+  - The weight table is fully customizable, allowing each school to adapt it to their needs.
+- Assigns seats in Full or Partial modes (schools choose the mode that aligns with their policies):
+  - **Full mode**: Assigns seats only if all requested seats are available, keeping families together. For example, a family is either fully assigned seats or waitlisted together, never split (e.g., skips if 3 are requested but only 1 remains).
+  - **Partial mode**: Assigns seats partially when fewer are available, allowing splits. For example, if 3 seats are requested but only 1 remains, 1 family member may get a seat while the other 2 are waitlisted.
 - Runs a lottery with two modes:
-  - Mode 1: Sibling Preference (siblings get priority).
-  - Mode 2: Siblings Pulled Together (siblings stay together if picked, no priority).
+  - **Mode 1: Sibling Preference** (siblings get priority for seats).
+  - **Mode 2: Siblings Pulled Together** (siblings stay together if picked, no priority).
 - Uses the [Fisher-Yates shuffle](https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle) for randomization—a proven algorithm that shuffles applicants fairly.
 - Outputs awarded seats and a waitlist.
 
