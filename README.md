@@ -19,7 +19,7 @@ This project began when a customer—a charter school—asked for help with thei
 - Outputs awarded seats and a waitlist.
 
 ## Setup
-Requires a Google Sheet with specific sheets and columns—see `lottery.gs` for details (e.g., `getSheetByName`, `getRange`). No pre-built spreadsheet here; this is the raw script for transparency and reuse.
+Requires a Google Sheet with specific sheets and columns—see `lottery.gs` for details (e.g., `getSheetByName`, `getRange`). No pre-built spreadsheet here; this is the raw script for transparency and reuse. See the code or the SYSTEM_DOCUMENTATION for more information on the Google Sheets setup.
 
 ## License
 Licensed under Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 (CC BY-NC-ND 4.0):
