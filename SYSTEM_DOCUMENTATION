@@ -1,0 +1,218 @@
+# Integrity6 Bus Lottery System Documentation
+
+## 🚀 Important Notice – Please Read First
+**Integrity6 Bus Lottery: Powered by Fisher-Yates Shuffle—Guaranteed Random, Proven Fair**
+
+### Disclaimer
+This Bus Lottery System is provided as a courtesy by Integrity6 to our customers, free of charge.  
+- **No Support or Maintenance**: Integrity6 does not provide technical support or ongoing maintenance. Updates are at our discretion.  
+- **Use at Your Own Discretion**: We strive for accuracy, but Integrity6 isn’t responsible for issues or decisions based on results.  
+- **Attribution Requirement**: Shared under [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 (CC BY-NC-ND 4.0)](https://creativecommons.org/licenses/by-nc-nd/4.0/).  
+  - ✅ You may share and distribute freely.  
+  - ✅ You must credit Integrity6 as the original creator.  
+  - ❌ You cannot modify or create derivatives without permission.  
+**By using this tool, you agree to these terms.**
+
+---
+
+## 🚀 Bus Lottery System - How It Works
+This document explains data processing, winner selection, and result generation.
+
+### Overview
+The Bus Lottery System randomly assigns bus seats when demand exceeds availability, with configurable fairness options.
+
+**Key Features:**  
+- **Sibling Preference Options**: Mode 1 (prioritize siblings) or Mode 2 (equal treatment, special sibling handling).  
+- **Weighted Lottery**: Higher chances for students farther away.  
+- **Full or Partial Awards**: All requested seats or as many as available.  
+- **Fully Automated**: Instant results with progress tracking.  
+- **Dual Output**: Public "Lottery Results" and masked "Private Results".  
+- **Waitlist System**: Numbered positions for remaining students.
+
+---
+
+### 📊 How the Data is Processed
+The system uses four key Google Sheets:
+
+1. **"import file" (Raw Data)**  
+   - Contains parent-submitted data.  
+   - Key columns: First Name (B), Last Name (C), Email 1 (D), Email 2 (E), Miles (K), Sibling Status (L), Seats Requested (AB).  
+
+2. **"lottery data" (Processed Data)**  
+   - Running `getLotteryData()`:  
+     - Pulls columns from "import file".  
+     - Assigns weights from "weight table".  
+     - Generates a 6-character ID (e.g., "X7K9P2").  
+     - Combines names (e.g., "John Doe (ID:X7K9P2)").  
+     - Clears prior data below row 5, writes from A6.  
+     - Totals seats requested in G3.
+
+3. **"Lottery Results" (Public Output)**  
+   - Running `runLottery()`:  
+     - Clears A6 downward.  
+     - Uses "Setup" settings (F6: seats, F7: full/partial, F8: mode).  
+     - Outputs status (Awarded/Waitlist), waitlist numbers, emails.  
+     - Progress in F2 (e.g., "Processed 20 of 50"), total in F3.
+
+4. **"Private Results" (Masked Output)**  
+   - Created if missing.  
+   - Masks names (e.g., "JDOE (ID:X7K9P2)") and emails (e.g., "j*e@e*****.com").
+
+5. **"Setup" (Configuration)**  
+   - F6: Total seats (e.g., 50).  
+   - F7: Full award ("Yes" = all or none, "No" = partial).  
+   - F8: Mode (1 = sibling priority, 2 = siblings together).
+
+6. **"weight table" (Weight Reference)**  
+   - Defines distance ranges and weights (e.g., "0-5" = 1).
+
+---
+
+### ⚙️ How the Functions Work
+
+#### `getLotteryData()` – Importing Data
+Fetches and prepares raw data.  
+**Steps:**  
+1. Reads columns B, C, D, E, K, L, AB from row 6.  
+2. Generates a 6-character ID.  
+3. Assigns weights using exact ranges from "weight table".  
+4. Writes to "lottery data" A6, clearing prior data.
+
+**Key Concepts:**  
+- Looping through rows.  
+- String manipulation for IDs/names.  
+- Precise weight lookup.
+
+#### `runLottery()` – Running the Lottery
+Selects winners and waitlists.  
+**Steps:**  
+1. Reads "lottery data" (C-I, row 6+).  
+2. Loads "Setup" (F6-F8).  
+3. Splits pools:  
+   - Mode 1: Sibling vs. regular.  
+   - Mode 2: Single pool.  
+4. Shuffles with Fisher-Yates.  
+5. Processes with weighted selection:  
+   - Weight = chances (e.g., 5 = 5 entries).  
+   - Skips duplicates.  
+6. Awards seats:  
+   - Full (F7 = "Yes"): All or none.  
+   - Partial (F7 = "No"): As many as available.  
+   - Mode 2 Siblings: Always full.  
+7. Assigns waitlist numbers.  
+8. Writes sorted results to both sheets.
+
+**Key Concepts:**  
+- Configurable logic.  
+- Weighted randomization.  
+- Progress tracking.  
+- Duplicate handling.
+
+#### Cleanup Functions
+- `cleanUpSheets()`: Clears A6+ in "lottery data", "Lottery Results", "Private Results"; resets F2/F3.  
+- `cleanUpImportFile()`: Clears A6+ in "import file".
+
+---
+
+### 🎯 Important Data Fields
+
+| **Sheet**          | **Column** | **Purpose**                              |
+|---------------------|------------|------------------------------------------|
+| import file        | B, C       | First & Last Name                        |
+| import file        | D, E       | Email 1, Email 2                         |
+| import file        | K          | Distance from School (Miles)             |
+| import file        | L          | Sibling Preference (Yes/No)              |
+| import file        | AB         | Seats Requested                         |
+| lottery data       | F          | Assigned Weight                          |
+| lottery data       | I          | Unique Full Name (e.g., "John Doe (ID:X7K9P2)") |
+| Lottery Results    | A          | Full Name                                |
+| Lottery Results    | B          | Status (Awarded/Waitlist)                |
+| Lottery Results    | C          | Waitlist Position                        |
+| Lottery Results    | D          | Seats Awarded/Requested                  |
+| Lottery Results    | E, F       | Email 1, Email 2                         |
+| Private Results    | A          | Masked Name (e.g., "JDOE (ID:X7K9P2)")   |
+| Private Results    | B-F        | Same as Lottery Results, masked emails   |
+
+---
+
+### 📌 Example Scenario
+**Setup:** 3 seats (F6 = 3), Full Award = No (F7 = "No"), Mode 1 (F8 = 1).  
+**Applicants:**  
+| Student     | Sibling? | Miles | Weight | Seats Needed |
+|-------------|----------|-------|--------|--------------|
+| John Doe    | No       | 2     | 1      | 1            |
+| Sarah Lee   | Yes      | 5     | 2      | 2            |
+| Mike Brown  | No       | 10    | 3      | 2            |
+
+**Process:**  
+1. Sarah (sibling, weight 2) wins 2 seats (1 left).  
+2. Mike (weight 3) gets 1 seat, 1 waitlisted.  
+3. John (weight 1) waitlisted.
+
+**Results:**  
+| Student     | Status   | Waitlist # | Seats |
+|-------------|----------|------------|-------|
+| Sarah Lee   | Awarded  |            | 2     |
+| Mike Brown  | Awarded  |            | 1     |
+| Mike Brown  | Waitlist | 1          | 1     |
+| John Doe    | Waitlist | 2          | 1     |
+
+---
+
+### 🚀 Summary
+- **Configurable**: Mode 1/2, full/partial via "Setup".  
+- **Weighted Fairness**: Distance-based chances.  
+- **Sibling Handling**: Prioritized (Mode 1) or together (Mode 2).  
+- **Automation**: Fast with progress updates.  
+- **Privacy**: Masked "Private Results".  
+
+**Run it:** Click `getLotteryData()`, then `runLottery()`!
+
+---
+
+## Weighted Lottery Logic
+
+### Overview
+Uses a weighted lottery where weight = entries (e.g., weight 3 = 3 chances). Two modes adjust sibling handling.
+
+### Key Components
+- **Setup Sheet**: F6 (seats), F7 (full/partial), F8 (mode).  
+- **Pools**: Mode 1 splits siblings/regular; Mode 2 uses one pool.  
+- **Shuffling**: Fisher-Yates ensures randomness.
+
+### Steps
+1. **Pool Creation**: Weighted entries added.  
+2. **Shuffling**: Pools randomized.  
+3. **Selection**:  
+   - Weighted pick.  
+   - Mode 1: Siblings first.  
+   - Mode 2: Equal, siblings full award.  
+   - Full/Partial per F7.  
+4. **Duplicates**: Skipped after first processing.  
+5. **Output**: Written to both sheets.
+
+### Example
+- **Total Seats**: 2  
+- Alice: Weight 3, 1 seat, No sibling  
+- Bob: Weight 2, 2 seats, Yes sibling  
+- **Mode 1, Partial**: Bob (2 seats), Alice waitlisted.  
+- **Mode 2, Full**: Alice (1 seat), Bob waitlisted.
+
+---
+
+## Award Options - Full or Partial
+
+### Choosing Your Award Option
+- **Full (F7 = "Yes")**: All seats or none.  
+  - ✅ Keeps families intact.  
+  - ❌ May skip larger requests.  
+- **Partial (F7 = "No")**: Awards available seats, rest waitlisted.  
+  - ✅ Maximizes seat use.  
+  - ❌ May split transportation.  
+
+### Mode Interaction
+- **Mode 1**: Full/partial applies to both pools.  
+- **Mode 2**: Siblings always full; non-siblings per F7.
+
+### Tip
+Check average seats in "import file" (high >4 → Partial, low <2 → Full).
