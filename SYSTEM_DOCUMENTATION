@@ -34,11 +34,11 @@ The Bus Lottery System randomly assigns bus seats when demand exceeds availabili
 ### 📊 How the Data is Processed
 The system uses four key Google Sheets:
 
-1. **"import file" (Raw Data)**  
+1. **"Import File" (Raw Data)**  
    - Contains parent-submitted data.  
    - Key columns: First Name (B), Last Name (C), Email 1 (D), Email 2 (E), Miles (K), Sibling Status (L), Seats Requested (AB).  
 
-2. **"lottery data" (Processed Data)**  
+2. **"Lottery Data" (Processed Data)**  
    - Running `getLotteryData()`:  
      - Pulls columns from "import file".  
      - Assigns weights from "weight table".  
@@ -63,7 +63,7 @@ The system uses four key Google Sheets:
    - F7: Full award ("Yes" = all or none, "No" = partial).  
    - F8: Mode (1 = sibling priority, 2 = siblings together).
 
-6. **"weight table" (Weight Reference)**  
+6. **"Weight Table" (Weight Reference)**  
    - Defines distance ranges and weights (e.g., "0-5" = 1).
 
 ---
@@ -117,12 +117,12 @@ Selects winners and waitlists.
 ### 🎯 Important Data Fields
 
 | **Sheet**          | **Column** | **Purpose**                              |
-|---------------------|------------|------------------------------------------|
+|---------------------|------------|-----------------------------------------|
 | import file        | B, C       | First & Last Name                        |
 | import file        | D, E       | Email 1, Email 2                         |
 | import file        | K          | Distance from School (Miles)             |
 | import file        | L          | Sibling Preference (Yes/No)              |
-| import file        | AB         | Seats Requested                         |
+| import file        | AB         | Seats Requested                          |
 | lottery data       | F          | Assigned Weight                          |
 | lottery data       | I          | Unique Full Name (e.g., "John Doe (ID:X7K9P2)") |
 | Lottery Results    | A          | Full Name                                |
@@ -214,5 +214,5 @@ Uses a weighted lottery where weight = entries (e.g., weight 3 = 3 chances). Two
 - **Mode 1**: Full/partial applies to both pools.  
 - **Mode 2**: Siblings always full; non-siblings per F7.
 
-### Tip
+### Tips
 Check average seats in "import file" (high >4 → Partial, low <2 → Full).
