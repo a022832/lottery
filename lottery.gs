@@ -1,6 +1,6 @@
 /*
 ===================================================================
-🚀 Integrity6 Bus Lottery System - Google Apps Script | Version 1.8
+🚀 Integrity6 Bus Lottery System - Google Apps Script | Version 1.9.7
 ===================================================================
 
 📝 Provided as a courtesy by Integrity6 to our customers.
@@ -15,16 +15,16 @@
 
 🔗 License Details: https://creativecommons.org/licenses/by-nc-nd/4.0/
 
-📅 Version: 1.8 | 📆 Release Date: March 2025 | 📌 Last Updated: March 2025
+📅 Version: 1.9.7 | 📆 Release Date: March 2025 | 📌 Last Updated: March 2025
 🚀 Updates:
-   - Fixed Mode 2 (Siblings Pulled Together) to ensure no sibling preference.
-   - Consolidated config options into 'Setup' sheet (F6: bus seats, F7: full/partial, F8: sibling mode).
-   - Progress indicator in F2 updates every 10 applicants.
+   - Version 1.9.7: Removed debug logging from 1.9.6b for production readiness.
+   - Version 1.9.6: Ensured all applicants processed in Mode 2, added logging for unprocessed.
+   - Version 1.9.5: Fixed syntax error in getLotteryData().
+   - Version 1.9.4: Fixed sibling mapping, full processing in Mode 2.
 
 © 2025 Integrity6. All Rights Reserved.
 ===================================================================
 */
-
 function getLotteryData() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sourceSheet = ss.getSheetByName("import file");
@@ -54,7 +54,7 @@ function getLotteryData() {
   var filteredData = columnRanges[0].map((_, i) => columnRanges.map(col => col[i][0]));
 
   var weightData = weightSheet.getDataRange().getValues();
-  var weightMap = buildWeightMap(weightData);
+  var weightRanges = buildWeightRanges(weightData);
 
   var outputData = filteredData.map((row, index) => {
     var firstName = row[0] || "";
@@ -64,7 +64,7 @@ function getLotteryData() {
 
     var uniqueID = generateUniqueID();
     var combinedNameWithID = `${firstName} ${lastName} (ID:${uniqueID})`;
-    var weight = getWeightForMilesFromMap(weightMap, miles);
+    var weight = getWeightForMilesFromRanges(weightRanges, miles);
 
     var newRow = [...row];
     newRow.splice(5, 0, weight);
@@ -98,8 +98,8 @@ function generateUniqueID() {
   return id;
 }
 
-function buildWeightMap(weightData) {
-  var weightMap = {};
+function buildWeightRanges(weightData) {
+  var weightRanges = [];
   for (var i = 1; i < weightData.length; i++) {
     var rangeText = weightData[i][0];
     var weight = weightData[i][1];
@@ -108,17 +108,20 @@ function buildWeightMap(weightData) {
     var [minDistance, maxDistance] = rangeText.split("-").map(val => parseFloat(val.trim()));
     if (isNaN(minDistance) || isNaN(maxDistance)) continue;
 
-    for (var mile = Math.floor(minDistance); mile <= Math.floor(maxDistance); mile++) {
-      weightMap[mile] = weight;
-    }
+    weightRanges.push({ min: minDistance, max: maxDistance, weight: weight });
   }
-  return weightMap;
+  return weightRanges;
 }
 
-function getWeightForMilesFromMap(weightMap, miles) {
+function getWeightForMilesFromRanges(weightRanges, miles) {
   if (!miles || isNaN(miles)) return "";
-  var mileKey = Math.floor(miles);
-  return weightMap[mileKey] || "";
+  for (var i = 0; i < weightRanges.length; i++) {
+    var range = weightRanges[i];
+    if (miles >= range.min && miles <= range.max) {
+      return range.weight;
+    }
+  }
+  return "";
 }
 
 function shuffleArray(array) {
@@ -141,6 +144,13 @@ function runLottery() {
     return;
   }
 
+  resultsSheet.getRange("F2").setValue("Clearing previous lottery...");
+  SpreadsheetApp.flush();
+  var lastRowResults = resultsSheet.getLastRow();
+  if (lastRowResults >= 6) {
+    resultsSheet.getRange(6, 1, lastRowResults - 5, resultsSheet.getLastColumn()).clearContent();
+  }
+
   var totalSeats = parseInt(setupSheet.getRange("F6").getValue()) || 0;
   if (totalSeats <= 0) {
     Logger.log("Invalid seats in Setup F6: " + setupSheet.getRange("F6").getValue());
@@ -151,14 +161,16 @@ function runLottery() {
   var fullRequestRequired = fullRequestValue === "yes";
   
   var lotteryMode = parseInt(setupSheet.getRange("F8").getValue()) || 1;
-  Logger.log("Lottery Mode set to: " + lotteryMode); // Debug log to confirm mode
+  Logger.log("Lottery Mode set to: " + lotteryMode);
 
   var lastRow = dataSheet.getLastRow();
   if (lastRow < 6) {
     Logger.log("No data found in 'lottery data'.");
     return;
   }
-  var dataRange = dataSheet.getRange(6, 3, lastRow - 5, 7).getValues();
+  var dataRange = dataSheet.getRange(6, 1, lastRow - 5, dataSheet.getLastColumn()).getValues();
+  Logger.log("Raw data from 'lottery data' (first 5 rows): " + JSON.stringify(dataRange.slice(0, 5)));
+  Logger.log("Total rows retrieved: " + dataRange.length);
 
   var siblingApplicants = [];
   var regularApplicants = [];
@@ -167,22 +179,25 @@ function runLottery() {
   var totalRegularWeight = 0;
   var totalWeight = 0;
 
-  // Populate applicant pools based on mode
   for (var i = 0; i < dataRange.length; i++) {
-    var email1 = dataRange[i][0];
-    var email2 = dataRange[i][1];
-    var weight = parseInt(dataRange[i][3]);
-    var seatsRequested = parseInt(dataRange[i][4]);
-    var siblingPref = dataRange[i][5];
-    var fullName = dataRange[i][6];
+    var row = dataRange[i];
+    var firstName = row[0] || "";               // A: First Name
+    var lastName = row[1] || "";                // B: Last Name
+    var email1 = row[2] || "";                  // C: Email 1
+    var email2 = row[3] || "";                  // D: Email 2
+    var weight = parseInt(row[5]) || 0;         // F: Weight
+    var seatsRequested = parseInt(row[6]) || 0; // G: Seats Requested
+    var siblingPref = row[7] && row[7].toString().toLowerCase() === "yes" ? 1 : 0; // H: Sibling Preference
+    var combinedNameWithID = row[8] || `${firstName} ${lastName} (ID:${generateUniqueID()})`; // I: Combined Name with ID
 
-    if (!fullName || isNaN(seatsRequested) || isNaN(weight) || weight <= 0) {
+    if (!combinedNameWithID || seatsRequested <= 0 || weight <= 0) {
+      Logger.log(`Skipping row ${i + 6}: Invalid data - Name: ${combinedNameWithID}, Seats: ${seatsRequested}, Weight: ${weight}`);
       continue;
     }
 
     var applicant = {
-      name: fullName,
-      sibling: (siblingPref && siblingPref.toLowerCase() === "yes") ? 1 : 0,
+      name: combinedNameWithID,
+      sibling: siblingPref,
       seatsNeeded: seatsRequested,
       email1: email1,
       email2: email2,
@@ -203,13 +218,14 @@ function runLottery() {
     }
   }
 
+  Logger.log("Sibling applicants: " + siblingApplicants.length + ", Regular applicants: " + regularApplicants.length + ", All applicants: " + allApplicants.length);
+
   if ((lotteryMode === 1 && siblingApplicants.length === 0 && regularApplicants.length === 0) ||
       (lotteryMode === 2 && allApplicants.length === 0)) {
-    Logger.log("No valid applicants found.");
+    Logger.log("No valid applicants found after processing.");
     return;
   }
 
-  // Shuffle pools
   if (lotteryMode === 1) {
     siblingApplicants = shuffleArray(siblingApplicants);
     regularApplicants = shuffleArray(regularApplicants);
@@ -237,11 +253,11 @@ function runLottery() {
         return { applicant: picked, newTotalWeight: totalWeight };
       }
     }
+    Logger.log("Warning: No applicant picked in pickWeighted despite applicants remaining.");
     return null;
   }
 
   if (lotteryMode === 1) {
-    // Mode 1: Sibling preference
     while (siblingApplicants.length > 0 && awardedSeats < totalSeats) {
       var pick = pickWeighted(siblingApplicants, totalSiblingWeight);
       if (!pick) break;
@@ -381,20 +397,25 @@ function runLottery() {
         SpreadsheetApp.flush();
       }
     }
-  } else { // Mode 2: Siblings Pulled Together
-    while (allApplicants.length > 0 && awardedSeats < totalSeats) {
+  } else { // Mode 2
+    while (allApplicants.length > 0) {
       var pick = pickWeighted(allApplicants, totalWeight);
-      if (!pick) break;
+      if (!pick) {
+        Logger.log("No pick returned, remaining applicants: " + allApplicants.length);
+        break;
+      }
       var applicant = pick.applicant;
       totalWeight = pick.newTotalWeight;
 
-      if (processedApplicants.has(applicant.name)) continue;
+      if (processedApplicants.has(applicant.name)) {
+        Logger.log(`Duplicate applicant skipped: ${applicant.name}`);
+        continue;
+      }
 
       var seatsAvailable = totalSeats - awardedSeats;
       var seatsToAward = applicant.seatsNeeded;
 
       if (applicant.sibling === 1) {
-        // For siblings, award all seats or none
         if (seatsToAward <= seatsAvailable) {
           awardedSeats += seatsToAward;
           results.push([applicant.name, "Awarded", "", seatsToAward, applicant.email1, applicant.email2]);
@@ -419,7 +440,6 @@ function runLottery() {
           waitlistNum += seatsToAward;
         }
       } else {
-        // For non-siblings, use partial awards if not full request required
         if (fullRequestRequired) {
           if (seatsToAward <= seatsAvailable) {
             awardedSeats += seatsToAward;
@@ -446,16 +466,18 @@ function runLottery() {
           }
         } else {
           seatsToAward = Math.min(seatsToAward, seatsAvailable);
-          awardedSeats += seatsToAward;
-          results.push([applicant.name, "Awarded", "", seatsToAward, applicant.email1, applicant.email2]);
-          privateResults.push([
-            formatName(applicant.name),
-            "Awarded",
-            "",
-            seatsToAward,
-            applicant.email1 ? formatEmail(applicant.email1) : "",
-            applicant.email2 ? formatEmail(applicant.email2) : ""
-          ]);
+          if (seatsToAward > 0) {
+            awardedSeats += seatsToAward;
+            results.push([applicant.name, "Awarded", "", seatsToAward, applicant.email1, applicant.email2]);
+            privateResults.push([
+              formatName(applicant.name),
+              "Awarded",
+              "",
+              seatsToAward,
+              applicant.email1 ? formatEmail(applicant.email1) : "",
+              applicant.email2 ? formatEmail(applicant.email2) : ""
+            ]);
+          }
           if (applicant.seatsNeeded > seatsToAward) {
             var seatsWaitlisted = applicant.seatsNeeded - seatsToAward;
             results.push([applicant.name, "Waitlist", waitlistNum, seatsWaitlisted, applicant.email1, applicant.email2]);
@@ -479,9 +501,15 @@ function runLottery() {
         SpreadsheetApp.flush();
       }
     }
+
+    if (allApplicants.length > 0) {
+      Logger.log("Unprocessed applicants remaining: " + allApplicants.length);
+      allApplicants.forEach((applicant, index) => {
+        Logger.log(`Unprocessed applicant ${index + 1}: ${applicant.name}`);
+      });
+    }
   }
 
-  // Waitlist remaining
   var allRemaining = lotteryMode === 1 ? [...siblingApplicants, ...regularApplicants] : allApplicants;
   for (var i = 0; i < allRemaining.length; i++) {
     var applicant = allRemaining[i];
